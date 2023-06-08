@@ -64,3 +64,14 @@ bot.on("callback_query", async (msg) => {
 });
 
 start();
+
+const XLSX = require("xlsx");
+
+const workbook = XLSX.readFile("./PAYMENT.xlsx");
+const worksheet = workbook.Sheets["PAYMENT"];
+const data = XLSX.utils.sheet_to_json(worksheet);
+
+const searchValue = "4960";
+const searchResults = data.filter((row) => row["CONSCODE"] == searchValue);
+
+console.log(searchResults);
