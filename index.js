@@ -1,10 +1,20 @@
 const TelegramApi = require("node-telegram-bot-api");
-
+const { gameOptions, againOptions } = require("./options");
 const token = "5830715336:AAEdSoxBiam7xL6RzeCQmfUBKGyBAGYDK5c";
 
 const bot = new TelegramApi(token, { polling: true });
 
 const chats = {};
+
+const startGame = async (chatId) => {
+  await bot.sendMessage(
+    chatId,
+    "Я загодал число от 0 до 9. а ты должен угадать"
+  );
+  const randomNumber = Math.floor(Math.random() * 10);
+  chats[chatId] = randomNumber;
+  await bot.sendMessage(chatId, "Отгадывай", gameOptions);
+};
 
 const start = () => {
   bot.setMyCommands([
@@ -31,17 +41,26 @@ bot.on("message", async (msg) => {
     );
   }
   if (text === "/game") {
-    await bot.sendMessage(
-      chatId,
-      "Я загадал число от 0 до 9. а ты должен угадать"
-    );
-    const randomNumber = Math.floor(Math.random() * 10);
-    chats[chatId] = randomNumber;
-    console.log(chats);
-    console.log(randomNumber);
-    return bot.sendMessage(chatId, "Отгадывай");
+    startGame(chatId);
   }
   return bot.sendMessage(chatId, "I don`t understand, try again");
+});
+
+bot.on("callback_query", async (msg) => {
+  const data = msg.data;
+  const chatId = msg.message.chat.id;
+  if (data === "/again") {
+    return startGame(chatId);
+  }
+  if (data == chats[chatId]) {
+    return await bot.sendMessage(
+      chatId,
+      `true it's ${chats[chatId]}`,
+      againOptions
+    );
+  } else {
+    return bot.sendMessage(chatId, `wrong it's ${chats[chatId]}`, againOptions);
+  }
 });
 
 start();
