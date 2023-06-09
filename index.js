@@ -13,8 +13,8 @@ const userState = {};
 
 const start = () => {
   bot.setMyCommands([
-    { command: "/start", description: "ДОБРО ПОЖАЛОВАТЬ!" },
-    { command: "/search", description: "ПОИСК" },
+    { command: "/start", description: "Добро пожаловать!" },
+    { command: "/search", description: "Поиск" },
   ]);
 };
 
