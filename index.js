@@ -1,77 +1,62 @@
 const TelegramApi = require("node-telegram-bot-api");
-const { gameOptions, againOptions } = require("./options");
+const XLSX = require("xlsx");
 const token = "5830715336:AAEdSoxBiam7xL6RzeCQmfUBKGyBAGYDK5c";
-
 const bot = new TelegramApi(token, { polling: true });
 
-const chats = {};
+const filePath = "./PAYMENT.xlsx";
+const sheetName = "PAYMENT";
+const workbook = XLSX.readFile(filePath);
+const worksheet = workbook.Sheets[sheetName];
+const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-const startGame = async (chatId) => {
-  await bot.sendMessage(
-    chatId,
-    "Я загодал число от 0 до 9. а ты должен угадать"
-  );
-  const randomNumber = Math.floor(Math.random() * 10);
-  chats[chatId] = randomNumber;
-  await bot.sendMessage(chatId, "Отгадывай", gameOptions);
-};
+const userState = {};
 
 const start = () => {
   bot.setMyCommands([
-    { command: "/start", description: "Начальное приветсвие" },
-    { command: "/info", description: "Информация о пользователе" },
-    { command: "/game", description: "Игра отгадай число" },
+    { command: "/start", description: "ДОБРО ПОЖАЛОВАТЬ!" },
+    { command: "/search", description: "ПОИСК" },
   ]);
 };
 
-bot.on("message", async (msg) => {
-  const text = msg.text;
+bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  if (text === "/start") {
-    await bot.sendSticker(
-      chatId,
-      "https://cdn.tlgrm.app/stickers/ea5/382/ea53826d-c192-376a-b766-e5abc535f1c9/192/7.webp"
-    );
-    return bot.sendMessage(chatId, `Добро пожаловать в телеграм бот STBot!`);
-  }
-  if (text === "/info") {
-    return bot.sendMessage(
-      chatId,
-      `You name ${msg.from.first_name} ${msg.from.last_name}`
-    );
-  }
-  if (text === "/game") {
-    startGame(chatId);
-  }
-  return bot.sendMessage(chatId, "I don`t understand, try again");
+  await bot.sendSticker(
+    chatId,
+    "https://cdn.tlgrm.app/stickers/ea5/382/ea53826d-c192-376a-b766-e5abc535f1c9/192/7.webp"
+  );
+  return bot.sendMessage(chatId, "Добро пожаловать в мой телеграм бот!");
 });
 
-bot.on("callback_query", async (msg) => {
-  const data = msg.data;
-  const chatId = msg.message.chat.id;
-  if (data === "/again") {
-    return startGame(chatId);
-  }
-  if (data == chats[chatId]) {
-    return await bot.sendMessage(
-      chatId,
-      `true it's ${chats[chatId]}`,
-      againOptions
-    );
-  } else {
-    return bot.sendMessage(chatId, `wrong it's ${chats[chatId]}`, againOptions);
+bot.onText(/\/search/, (msg) => {
+  const chatId = msg.chat.id;
+  userState[chatId] = { command: "/search" };
+  bot.sendMessage(chatId, "Введите л/с:");
+});
+
+bot.on("message", (msg) => {
+  const text = msg.text;
+  const chatId = msg.chat.id;
+
+  if (userState[chatId]) {
+    if (userState[chatId].command === "/search") {
+      const searchValue = text;
+      const searchResults = data.filter(
+        (row) => row[0] === parseInt(searchValue)
+      );
+      if (searchResults.length > 0) {
+        bot.sendMessage(
+          chatId,
+          `Результаты поиска для л/с ${searchValue}:\n${JSON.stringify(
+            searchResults
+          )}`
+        );
+      } else {
+        bot.sendMessage(chatId, `Нет результатов для л/с ${searchValue}`);
+      }
+      delete userState[chatId];
+      return;
+    }
   }
 });
 
 start();
-
-const XLSX = require("xlsx");
-
-const workbook = XLSX.readFile("./PAYMENT.xlsx");
-const worksheet = workbook.Sheets["PAYMENT"];
-const data = XLSX.utils.sheet_to_json(worksheet);
-
-const searchValue = "4960";
-const searchResults = data.filter((row) => row["CONSCODE"] == searchValue);
-
-console.log(searchResults);
