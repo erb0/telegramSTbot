@@ -3,8 +3,8 @@ const XLSX = require("xlsx");
 const token = "5830715336:AAEdSoxBiam7xL6RzeCQmfUBKGyBAGYDK5c";
 const bot = new TelegramApi(token, { polling: true });
 
-const filePath = "./PAYMENT.xlsx";
-const sheetName = "PAYMENT";
+const filePath = "./index.xlsx";
+const sheetName = "index";
 const workbook = XLSX.readFile(filePath);
 const worksheet = workbook.Sheets[sheetName];
 const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -18,13 +18,29 @@ const start = () => {
   ]);
 };
 
+const mainMenuKeyboard = {
+  reply_markup: {
+    keyboard: [
+      [
+        `${String.fromCodePoint(0x1f50d)} ПОИСК`,
+        `${String.fromCodePoint(0x25c0)} НАЗАД`,
+      ],
+    ],
+    resize_keyboard: true,
+  },
+};
+
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   await bot.sendSticker(
     chatId,
     "https://cdn.tlgrm.app/stickers/ea5/382/ea53826d-c192-376a-b766-e5abc535f1c9/192/7.webp"
   );
-  return bot.sendMessage(chatId, "Добро пожаловать в мой телеграм бот!");
+  return bot.sendMessage(
+    chatId,
+    "Добро пожаловать в мой телеграм бот!",
+    mainMenuKeyboard
+  );
 });
 
 bot.onText(/\/search/, (msg) => {
@@ -46,9 +62,7 @@ bot.on("message", (msg) => {
       if (searchResults.length > 0) {
         bot.sendMessage(
           chatId,
-          `Результаты поиска для л/с ${searchValue}:\n${JSON.stringify(
-            searchResults
-          )}`
+          `Лицевой счет:  [ ${searchResults[0][0]} ]\nУчасток: ${searchResults[0][1]}\nАбонент: ${searchResults[0][2]}\nНомер водомера: ${searchResults[0][3]}`
         );
       } else {
         bot.sendMessage(chatId, `Нет результатов для л/с ${searchValue}`);
